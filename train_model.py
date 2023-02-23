@@ -12,7 +12,9 @@ from torch.utils.data import DataLoader
 import argparse
 import os
 
-#TODO: Import dependencies for Debugging andd Profiling
+#Import dependencies for Debugging andd Profiling
+from smdebug import modes
+from smdebug.pytorch import get_hook
 
 def test(model, test_loader, device):
     '''
@@ -110,16 +112,16 @@ def create_data_loaders(train_batch_size, test_batch_size):
         transforms.ToTensor()
     ])
     
-    train_set = torchvision.datasets.ImageFolder("./dogImages/train", transform=train_transform)
+    train_set = torchvision.datasets.ImageFolder("train", transform=train_transform)
     print(f"First image in train is {train_set[0][0]}")
-    test_set = torchvision.datasets.ImageFolder("./dogImages/test", transform=test_transform)
+    test_set = torchvision.datasets.ImageFolder("test", transform=test_transform)
     print(f"First image in test is {test_set[0][0]}")
     
     
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
-    testloader = DataLoader(testset, batch_size=batch_size)
+    train_loader = DataLoader(train_set, batch_size=train_batch_size, shuffle=True)
+    test_loader = DataLoader(test_set, batch_size=test_batch_size, shuffle=True)
     
-    return trainloader, testloader
+    return train_loader, test_loader
 
 # save model
 def save(model, model_dir):
@@ -131,18 +133,20 @@ def main(args):
     '''
     Creating a train_loader
     '''
-    train_kwargs = {"batch_size": args.batch_size, "shuffle"=True}
+#     train_kwargs = {"batch_size": args.batch_size, "shuffle"=True}
     
-    train_dataset = torchvision.datasets.ImageFolder("/dogImages/train")
-    train_loader = DataLoader(train_dataset, **train_kwargs)
+#     train_dataset = torchvision.datasets.ImageFolder("/dogImages/train")
+#     train_loader = DataLoader(train_dataset, **train_kwargs)
     
     '''
     Creating a test_loader
     '''
-    test_kwargs = {"batch_size": args.test_batch_size, "shuffle"=True}
+#     test_kwargs = {"batch_size": args.test_batch_size, "shuffle"=True}
     
-    test_dataset = torchvision.datasets.ImageFolder("/dogImages/test")
-    test_loader = DataLoader(test_dataset, **test_kwargs)
+#     test_dataset = torchvision.datasets.ImageFolder("/dogImages/test")
+#     test_loader = DataLoader(test_dataset, **test_kwargs)
+    
+    train_loader, test_loader = create_data_loaders(args.batch_size, args.test_batch_size)
     
     '''
     Initialize a model by calling the net function
