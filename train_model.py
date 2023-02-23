@@ -39,7 +39,7 @@ def test(model, test_loader, device):
     total_acc = running_corrects / len(test_loader)
     
     print(
-        "\nTest set: Loss: {:.4f}, Accuracy: ({:.0f}%)\n".format(
+        "\nTest set: Average loss: {:.4f}, Accuracy: ({:.0f}%)\n".format(
             total_loss, total_acc
         )
     )
@@ -95,12 +95,31 @@ def net():
     
     return model
 
-def create_data_loaders(data, batch_size):
+def create_data_loaders(train_batch_size, test_batch_size):
     '''
     This is an optional function that you may or may not need to implement
     depending on whether you need to use data loaders or not
     '''
-    pass
+    train_transform = transforms.Compose([
+        transforms.Resize((100, 100)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.ToTensor()
+    ])
+    test_transform = transforms.Compose([
+        transforms.Resize((100, 100)),
+        transforms.ToTensor()
+    ])
+    
+    train_set = torchvision.datasets.ImageFolder("./dogImages/train", transform=train_transform)
+    print(f"First image in train is {train_set[0][0]}")
+    test_set = torchvision.datasets.ImageFolder("./dogImages/test", transform=test_transform)
+    print(f"First image in test is {test_set[0][0]}")
+    
+    
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
+    testloader = DataLoader(testset, batch_size=batch_size)
+    
+    return trainloader, testloader
 
 # save model
 def save(model, model_dir):
@@ -198,6 +217,10 @@ if __name__=='__main__':
     )
     # Container environment
     parser.add_argument("--model-dir", type=str, default=os.environ["SM_MODEL_DIR"])
+    parser.add_argument("--hosts", type=list, default=json.loads(os.environ["SM_HOSTS"]))
+    parser.add_argument("--current-host", type=str, default=os.environ["SM_CURRENT_HOST"])
+    parser.add_argument("--data-dir", type=str, default=os.environ["SM_CHANNEL_TRAINING"])
+    parser.add_argument("--num-gpus", type=int, default=os.environ["SM_NUM_GPUS"])
     
     args=parser.parse_args()
     
