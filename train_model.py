@@ -25,10 +25,22 @@ def test(model, test_loader, device):
     TODO: Add debugging/profiling hooks
     '''
     model.eval()
+    
+    if hook:
+        hook.set_mode(smd.modes.EVAL)
+        
     running_loss=0
     running_corrects=0
     
-    for inputs, labels in test_loader:
+    #for inputs, labels in test_loader:
+    for step, (inputs, labels) in enumerate(test_loader):
+        
+        dataset_length = len(test_loader.dataset)
+        running_samples = (step + 1) * len(inputs)
+        proportion = 0.2 # we will use 20% of the dataset
+        if running_samples>(proportion*dataset_length):
+            break
+            
         inputs = inputs.to(device)
         labels = labels.to(device)
         outputs=model(inputs)
@@ -58,10 +70,23 @@ def train(model, train_loader, criterion, optimizer, epochs, device):
     '''
     
     model.train()
+
+    if hook:
+        hook.register_loss(criterion)
+        hook.set_mode(smd.modes.TRAIN)
+    
     for e in range(epochs):
         running_loss = 0
         correct = 0
-        for data, target in train_loader:
+        #for data, target in train_loader:
+        for step, (data, target) in enumerate(train_loader):
+            
+            dataset_length = len(train_loader.dataset)
+            running_samples = (step + 1) * len(data)
+            proportion = 0.2 # we will use 20% of the dataset
+            if running_samples>(proportion*dataset_length):
+                break
+                
             data = data.to(device)
             target = target.to(device)
             optimizer.zero_grad()
@@ -71,7 +96,7 @@ def train(model, train_loader, criterion, optimizer, epochs, device):
             loss.backward()
             optimizer.step()
             pred = pred.argmax(dim=1, keepdim=True)
-            coreect += pred.eq(target.view_as(pred)).sum().item()
+            correct += pred.eq(target.view_as(pred)).sum().item()
         print(f"Epoch {e}: Loss {running_loss/len(train_loader.dataset)}, \
             Accuracy {100*(correct/len(train_loader.dataset))}%")
     
@@ -131,21 +156,8 @@ def save(model, model_dir):
 def main(args):
     
     '''
-    Creating a train_loader
+    Creating a train_loader and test_loader
     '''
-#     train_kwargs = {"batch_size": args.batch_size, "shuffle"=True}
-    
-#     train_dataset = torchvision.datasets.ImageFolder("/dogImages/train")
-#     train_loader = DataLoader(train_dataset, **train_kwargs)
-    
-    '''
-    Creating a test_loader
-    '''
-#     test_kwargs = {"batch_size": args.test_batch_size, "shuffle"=True}
-    
-#     test_dataset = torchvision.datasets.ImageFolder("/dogImages/test")
-#     test_loader = DataLoader(test_dataset, **test_kwargs)
-    
     train_loader, test_loader = create_data_loaders(args.batch_size, args.test_batch_size)
     
     '''
@@ -172,15 +184,20 @@ def main(args):
     epochs = args.epochs
     
     '''
+    Creating and Registering hook for bebugging
+    '''
+    hook = get_hook(create_if_not_exists=True)
+    
+    '''
     TODO: Call the train function to start training your model
     Remember that you will need to set up a way to get training data from S3
     '''
-    model=train(model, train_loader, loss_criterion, optimizer, epochs, device)
+    model=train(model, train_loader, loss_criterion, optimizer, epochs, device, hook)
     
     '''
     TODO: Test the model to see its accuracy
     '''
-    test(model, test_loader, criterion, device)
+    test(model, test_loader, loss_criterion, device, hook)
     
     '''
     Save the trained model
