@@ -44,14 +44,14 @@ def  test(model, test_loader, criterion, device, hook):
     running_loss=0
     running_corrects=0
     
-    #for inputs, labels in test_loader:
-    for step, (inputs, labels) in enumerate(test_loader):
+    for inputs, labels in test_loader:
+#     for step, (inputs, labels) in enumerate(test_loader):
         
-        dataset_length = len(test_loader.dataset)
-        running_samples = (step + 1) * len(inputs)
-        proportion = 0.2 # we will use 20% of the dataset
-        if running_samples>(proportion*dataset_length):
-            break
+#         dataset_length = len(test_loader.dataset)
+#         running_samples = (step + 1) * len(inputs)
+#         proportion = 0.2 # we will use 20% of the dataset
+#         if running_samples>(proportion*dataset_length):
+#             break
             
         inputs = inputs.to(device)
         labels = labels.to(device)
@@ -90,14 +90,14 @@ def train(model, train_loader, criterion, optimizer, epochs, device, hook):
     for e in range(epochs):
         running_loss = 0
         correct = 0
-        #for data, target in train_loader:
-        for step, (data, target) in enumerate(train_loader):
+        for data, target in train_loader:
+#         for step, (data, target) in enumerate(train_loader):
             
-            dataset_length = len(train_loader.dataset)
-            running_samples = (step + 1) * len(data)
-            proportion = 0.2 # we will use 20% of the dataset
-            if running_samples>(proportion*dataset_length):
-                break
+#             dataset_length = len(train_loader.dataset)
+#             running_samples = (step + 1) * len(data)
+#             proportion = 0.2 # we will use 20% of the dataset
+#             if running_samples>(proportion*dataset_length):
+#                 break
                 
             data = data.to(device)
             target = target.to(device)
