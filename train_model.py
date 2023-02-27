@@ -44,26 +44,26 @@ def  test(model, test_loader, criterion, device, hook):
     running_loss=0
     running_corrects=0
     
-    for inputs, labels in test_loader:
-#     for step, (inputs, labels) in enumerate(test_loader):
+    for data, target in test_loader:
+#     for step, (data, target) in enumerate(test_loader):
         
 #         dataset_length = len(test_loader.dataset)
-#         running_samples = (step + 1) * len(inputs)
-#         proportion = 0.2 # we will use 20% of the dataset
+#         running_samples = (step + 1) * len(data)
+#         proportion = 0.1 # we will use 20% of the dataset
 #         if running_samples>(proportion*dataset_length):
 #             break
             
-        inputs = inputs.to(device)
-        labels = labels.to(device)
-        outputs=model(inputs)
-        loss=criterion(outputs, labels)
-        _, preds = torch.max(outputs, 1)
-        running_loss += loss.item() * inputs.size(0)
-        running_corrects += torch.sum(preds == labels.data).item()
+        data = data.to(device)
+        target = target.to(device)
+        outputs = model(data)
+        loss = criterion(outputs, target)
+        running_loss += loss
+        pred = outputs.argmax(dim=1, keepdim=True)
+        running_corrects += pred.eq(target.view_as(pred)).sum().item()
 
-    total_loss = running_loss / len(test_loader)
-    total_acc = running_corrects / len(test_loader)
-    
+    total_loss = running_loss / len(test_loader.dataset)
+    total_acc = 100 * (running_corrects / len(test_loader.dataset))
+
     print(
         "\nTest set: Average loss: {:.4f}, Accuracy: ({:.0f}%)\n".format(
             total_loss, total_acc
@@ -171,7 +171,7 @@ def main(args):
     Creating a train_loader and test_loader
     '''
     train_data_channel = os.environ['SM_CHANNEL_TRAIN']
-    test_data_channel = os.environ['SM_CHANNEL_TEST']
+    test_data_channel = os.environ['SM_CHANNEL_VALID']
     train_loader, test_loader = create_data_loaders(train_data_channel, args.batch_size, test_data_channel,     args.test_batch_size)
     
     '''
