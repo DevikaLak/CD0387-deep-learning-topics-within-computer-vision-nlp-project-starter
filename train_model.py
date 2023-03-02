@@ -36,10 +36,10 @@ def  test(model, test_loader, criterion, device, hook):
     
     TODO: Add debugging/profiling hooks
     '''
-    model.eval()
-    
     if hook:
         hook.set_mode(smd.modes.EVAL)
+        
+    model.eval()
         
     running_loss=0
     running_corrects=0
@@ -80,12 +80,10 @@ def train(model, train_loader, criterion, optimizer, epochs, device, hook):
     
     TODO: Add debugging/profiling hooks
     '''
+    if hook:
+        hook.set_mode(smd.modes.TRAIN)
     
     model.train()
-
-    if hook:
-        hook.register_loss(criterion)
-        hook.set_mode(smd.modes.TRAIN)
     
     for e in range(epochs):
         running_loss = 0
@@ -171,7 +169,7 @@ def main(args):
     Creating a train_loader and test_loader
     '''
     train_data_channel = os.environ['SM_CHANNEL_TRAIN']
-    test_data_channel = os.environ['SM_CHANNEL_VALID']
+    test_data_channel = os.environ['SM_CHANNEL_TEST']
     train_loader, test_loader = create_data_loaders(train_data_channel, args.batch_size, test_data_channel,     args.test_batch_size)
     
     '''
@@ -200,7 +198,11 @@ def main(args):
     '''
     Creating and Registering hook for bebugging
     '''
-    hook = get_hook(create_if_not_exists=True)
+    hook = smd.Hook.create_from_json_file()
+    if hook:
+        hook.register_hook(model)
+        print(f"Registering to output loss tensors")
+        hook.register_loss(loss_criterion)
     
     '''
     TODO: Call the train function to start training your model
